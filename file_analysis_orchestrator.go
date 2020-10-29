@@ -16,6 +16,7 @@ func main() {
 
 	var sha_algorithm string
 	var analysis_flag string
+	var recursivity_flag string
 
 	app := &cli.App{
 		Name:    "Go File Analysis Suite",
@@ -83,6 +84,31 @@ func main() {
 				},
 			},
 			{
+				Name:    "unzip",
+				Aliases: []string{"u"},
+				Usage:   "use it to unzip all zips within a directory. select recursivity using -recursive",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						"recursivity",
+						[]string{"sha"},
+						"hashing algorithm, options : sha256, sha512",
+						[]string{""},
+						"",
+						false,
+						false,
+						false,
+						"",
+						"yes",
+						&recursivity_flag,
+						false,
+					},
+				},
+				Action: func(c *cli.Context) error {
+					Unzip_files_in_folder(recursivity_flag)
+					return nil
+				},
+			},
+			{
 				Name:    "report",
 				Aliases: []string{"a"},
 				Usage:   "Use get an anlysis report on folder",
@@ -96,6 +122,16 @@ func main() {
 
 	app.Run(os.Args)
 
+}
+
+func Unzip_files_in_folder(recursivity_flag string) {
+	directory_name, directory_selection_error := dialog.Directory().Title("Select log file storage location").Browse()
+
+	if directory_selection_error != nil {
+		fmt.Println(directory_selection_error)
+	}
+
+	internal.Unzip_files_in_folder(directory_name, recursivity_flag)
 }
 
 func Start_file_hash_analysis(hashing_alogrithm string) {

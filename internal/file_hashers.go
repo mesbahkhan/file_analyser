@@ -14,7 +14,7 @@ import (
 )
 
 func Get_file_hashes_for_folder(directory_name string, hash_algorithm string) {
-	var file_hash_sha256 string
+	var file_hash string
 
 	var file_information_row []string
 	var file_information_table [][]string
@@ -33,7 +33,7 @@ func Get_file_hashes_for_folder(directory_name string, hash_algorithm string) {
 	defer log_file.Close()
 
 	for file_index, file := range files_list {
-		log.Printf("calculting has for %s\r\n", file)
+		log.Printf("calculting hash using %s for %s\r\n", hash_algorithm, file)
 		file_information_row = nil
 		file_information_row = append(
 			file_information_row,
@@ -46,8 +46,8 @@ func Get_file_hashes_for_folder(directory_name string, hash_algorithm string) {
 			strconv.FormatBool(directory_contents[file_index].IsDir()))
 
 		if directory_contents[file_index].IsDir() != true {
-			file_hash_sha256 = Calculate_file_hash(file, hash_algorithm)
-			file_information_row = append(file_information_row, file_hash_sha256)
+			file_hash = Calculate_file_hash(file, hash_algorithm)
+			file_information_row = append(file_information_row, file_hash)
 		}
 
 		file_information_table = append(file_information_table, file_information_row)
