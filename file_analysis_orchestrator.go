@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"storage/csv"
 )
 
@@ -66,7 +67,7 @@ func main() {
 						"hashing algorithm, options : sha256, sha512",
 						[]string{""},
 						"",
-						true,
+						false,
 						false,
 						false,
 						"",
@@ -241,6 +242,11 @@ func Copy_files(move_file_list_filename string) (int64, error) {
 				continue
 			}
 			defer source.Close()
+
+			destination_directory := filepath.Dir(row[1])
+			if _, err := os.Stat(destination_directory); os.IsNotExist(err) {
+				os.MkdirAll(destination_directory, os.ModePerm)
+			}
 
 			destination, err := os.Create(row[1])
 			if err != nil {
