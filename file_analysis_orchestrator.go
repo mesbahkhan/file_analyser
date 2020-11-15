@@ -6,28 +6,25 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/sqweek/dialog"
 	"gopkg.in/urfave/cli.v2"
-	"io"
 	"log"
 	"os"
-	"path/filepath"
-	"storage/csv"
 )
 
 func main() {
 
 	var sha_algorithm string
-	var analysis_flag string
+	var delete_source_flag string
 	var recursivity_flag string
 
 	app := &cli.App{
 		Name:    "Go File Analysis Suite",
 		Usage:   "gofiles [mode]",
-		Version: "0.0.1",
+		Version: "0.0.2",
 		Authors: []*cli.Author{
 			&cli.Author{
 				"Mesbah Khan",
 				"khanm@ontoledgy.io"}},
-		Copyright: "copyright 2019",
+		Copyright: "copyright 2020",
 
 		Commands: []*cli.Command{
 			{
@@ -62,9 +59,9 @@ func main() {
 				Usage:   "Use it to copy files using a csv loader with source and destination paths",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						"Analysis",
+						"deleteSource",
 						[]string{"ana"},
-						"hashing algorithm, options : sha256, sha512",
+						"enable deletion of source file : use copy -deleteSource",
 						[]string{""},
 						"",
 						false,
@@ -72,27 +69,24 @@ func main() {
 						false,
 						"",
 						"",
-						&analysis_flag,
+						&delete_source_flag,
 						false,
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if analysis_flag == "yes" {
-						Analyse_source_folder()
-					}
-					Start_file_copy()
+					Start_file_copy(delete_source_flag)
 					return nil
 				},
 			},
 			{
 				Name:    "unzip",
 				Aliases: []string{"u"},
-				Usage:   "use it to unzip all zips within a directory. select recursivity using -recursive",
+				Usage:   "use it to unzip all zips within a directory. Select recursivity using -recursive yes or no",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						"recursivity",
 						[]string{"sha"},
-						"hashing algorithm, options : sha256, sha512",
+						"",
 						[]string{""},
 						"",
 						false,
@@ -126,10 +120,14 @@ func main() {
 }
 
 func Unzip_files_in_folder(recursivity_flag string) {
-	directory_name, directory_selection_error := dialog.Directory().Title("Select log file storage location").Browse()
+
+	directory_name, directory_selection_error :=
+		dialog.Directory().
+			Title("Select log file storage location").Browse()
 
 	if directory_selection_error != nil {
-		fmt.Println(directory_selection_error)
+		fmt.Println(
+			directory_selection_error)
 	}
 
 	internal.Unzip_files_in_folder(directory_name, recursivity_flag)
@@ -137,7 +135,8 @@ func Unzip_files_in_folder(recursivity_flag string) {
 
 func Start_file_hash_analysis(hashing_alogrithm string) {
 
-	directory_name, directory_selection_error := dialog.Directory().Title("Select log file storage location").Browse()
+	directory_name, directory_selection_error := dialog.Directory().
+		Title("Select log file storage location").Browse()
 
 	if directory_selection_error != nil {
 		fmt.Println(directory_selection_error)
@@ -147,13 +146,25 @@ func Start_file_hash_analysis(hashing_alogrithm string) {
 
 }
 
-func Start_file_copy() {
+func Start_file_copy(delete_source_flag string) {
 
-	move_file_list_filename, move_file_selection_err := dialog.File().Filter("Select mapping file", "csv").Load()
-	fmt.Println(move_file_selection_err)
-	//Analyse_source_folder()
-	_, copy_err := Copy_files(move_file_list_filename)
-	fmt.Println(copy_err)
+	move_file_list_filename, move_file_selection_err :=
+		dialog.File().Filter("Select mapping file", "csv").Load()
+
+	if move_file_selection_err == nil {
+
+		_, copy_err := internal.Copy_files(
+			move_file_list_filename, delete_source_flag)
+
+		if copy_err != nil {
+			fmt.Println(copy_err)
+		}
+
+	} else {
+		fmt.Println(
+			move_file_selection_err)
+
+	}
 
 }
 
@@ -210,56 +221,4 @@ func Analyse_source_folder() {
 
 	log_file.Close()
 
-}
-
-func Copy_files(move_file_list_filename string) (int64, error) {
-
-	move_file_list_file, csv_data := storage.Open_csv_file(move_file_list_filename)
-	move_file_list := storage.Read_csv_to_slice(move_file_list_file, csv_data, "")
-
-	error_count := 0
-	fmt.Println(len(move_file_list))
-	fmt.Println(move_file_list)
-
-	for index, row := range move_file_list {
-		if index != 0 {
-			log.Printf("copying %s to %s \n", row[0], row[1])
-			sourceFileStat, err := os.Stat(row[0])
-			if err != nil {
-				log.Printf("source file error: %s\n", err)
-				error_count += 1
-				continue
-			}
-
-			if !sourceFileStat.Mode().IsRegular() {
-				log.Printf("%s", fmt.Errorf("%s is not a regular file\n", row[0]))
-			}
-
-			source, err := os.Open(row[0])
-			if err != nil {
-				log.Printf("source file error %s\n", err)
-				error_count += 1
-				continue
-			}
-			defer source.Close()
-
-			destination_directory := filepath.Dir(row[1])
-			if _, err := os.Stat(destination_directory); os.IsNotExist(err) {
-				os.MkdirAll(destination_directory, os.ModePerm)
-			}
-
-			destination, err := os.Create(row[1])
-			if err != nil {
-				log.Printf("destination file error: %s\n", err)
-				error_count += 1
-				continue
-			}
-			defer destination.Close()
-			nBytes, err := io.Copy(destination, source)
-			log.Printf("copied bytes %v, error: %v\n", nBytes, err)
-		}
-
-	}
-	log.Printf("Process completed with %v errors\n", error_count)
-	return 0, nil
 }

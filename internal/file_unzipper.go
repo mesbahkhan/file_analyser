@@ -13,7 +13,10 @@ func Unzip_files_in_folder(directory_name string, recursivity_flag string) {
 
 	var zip_files []string
 	//add directory information
-	files_list, _, file_walk_errors := Find_all_directory_content_recursive(directory_name)
+
+	files_list, _, file_walk_errors :=
+		Find_all_directory_content_recursive(
+			directory_name)
 
 	if file_walk_errors != nil {
 		print(file_walk_errors)

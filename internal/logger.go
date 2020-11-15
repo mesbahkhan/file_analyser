@@ -10,7 +10,8 @@ import (
 
 func Set_log_file() *os.File {
 
-	log_file_location, log_file_selection_err := dialog.Directory().Title("Select log file storage location").Browse()
+	log_file_location, log_file_selection_err :=
+		dialog.Directory().Title("Select log file storage location").Browse()
 
 	fmt.Println(log_file_selection_err)
 

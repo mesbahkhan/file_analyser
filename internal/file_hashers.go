@@ -20,6 +20,7 @@ func Get_file_hashes_for_folder(directory_name string, hash_algorithm string) {
 	var file_information_table [][]string
 
 	output_report_file_name := "output.csv"
+
 	files_list, directory_contents, file_walk_errors := Find_all_directory_content_recursive(directory_name)
 
 	if file_walk_errors != nil {
