@@ -35,7 +35,7 @@ func main() {
 					&cli.StringFlag{
 						"hashAlgo",
 						[]string{"sha"},
-						"hashing algorithm, options : sha256, sha512",
+						"hashing algorithm, options : sha256, sha512, md5",
 						[]string{""},
 						"",
 						false,
