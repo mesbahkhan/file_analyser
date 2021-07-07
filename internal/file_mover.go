@@ -16,8 +16,7 @@ func Copy_files(move_file_list_filename string, delete_source_flag string) (int,
 
 	var error_count int = 0
 
-	fmt.Println(len(move_file_list))
-	fmt.Println(move_file_list)
+	fmt.Printf("number of files to process : %s\n", len(move_file_list))
 
 	log_file := Set_log_file()
 

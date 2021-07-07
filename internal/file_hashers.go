@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"crypto/md5"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
@@ -78,6 +79,8 @@ func Calculate_file_hash(file_path_and_name string, hash_algorithm string) strin
 		file_hash = sha256.New()
 	case "sha512":
 		file_hash = sha512.New()
+	case "md5":
+		file_hash = md5.New()
 	}
 
 	// 2 channels: used to give green light for reading into buffer b1 or b2
