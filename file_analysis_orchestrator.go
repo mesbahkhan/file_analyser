@@ -31,7 +31,7 @@ func main() {
 			{
 				Name:    "hash",
 				Aliases: []string{"h"},
-				Usage:   "use it to create a hashtable for a directory. Select hashing algorithms using -hashAlgo",
+				Usage:   "use it to create a hashtable for a directory. options: --hashAlgo {sha256, sha512, md5} sets hashing algorithms , --skipFiles {n} skips n files, --batchSize {n} writes n processed files",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						"hashAlgo",
