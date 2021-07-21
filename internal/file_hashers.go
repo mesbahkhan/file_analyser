@@ -4,21 +4,24 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"crypto/sha512"
+	b64 "encoding/base64"
 	"fmt"
 	"hash"
 	"io"
 	"log"
 	"os"
+	"sort"
 	"storage/csv"
 	"strconv"
 	"sync"
 )
 
-func Get_file_hashes_for_folder(directory_name string, hash_algorithm string) {
+func Get_file_hashes_for_folder(directory_name string, hash_algorithm string, skip_files int, batch_size int) {
 	var file_hash string
 
 	var file_information_row []string
 	var file_information_table [][]string
+	var total_file_count int
 
 	output_report_file_name := "output.csv"
 
@@ -33,33 +36,51 @@ func Get_file_hashes_for_folder(directory_name string, hash_algorithm string) {
 	log_file := Set_log_file()
 
 	defer log_file.Close()
-
-	for file_index, file := range files_list {
-		log.Printf("calculting hash using %s for %s\r\n", hash_algorithm, file)
-		file_information_row = nil
-		file_information_row = append(
-			file_information_row,
-			strconv.Itoa(file_index),
-			directory_contents[file_index].Name(),
-			file,
-			strconv.FormatInt(directory_contents[file_index].Size(), 10),
-			directory_contents[file_index].ModTime().String(),
-			directory_contents[file_index].Mode().String(),
-			strconv.FormatBool(directory_contents[file_index].IsDir()))
-
-		if directory_contents[file_index].IsDir() != true {
-			file_hash = Calculate_file_hash(file, hash_algorithm)
-			file_information_row = append(file_information_row, file_hash)
-		}
-
-		file_information_table = append(file_information_table, file_information_row)
-
-	}
+	total_file_count = len(files_list)
+	sort.Strings(files_list)
 
 	output_file, _ :=
 		storage.Open_csv_file(
 			output_report_file_name)
 
+	for file_index, file := range files_list {
+
+		if file_index > skip_files {
+
+			log.Printf("calculting hash using %s for %s\r\n", hash_algorithm, file)
+			file_information_row = nil
+			file_information_row = append(
+				file_information_row,
+				strconv.Itoa(file_index),
+				directory_contents[file_index].Name(),
+				file,
+				strconv.FormatInt(directory_contents[file_index].Size(), 10),
+				directory_contents[file_index].ModTime().String(),
+				directory_contents[file_index].Mode().String(),
+				strconv.FormatBool(directory_contents[file_index].IsDir()))
+
+			if directory_contents[file_index].IsDir() != true {
+
+				fmt.Println("processing : ", file_index, " / ", total_file_count)
+				file_hash = Calculate_file_hash(file, hash_algorithm)
+				file_information_row = append(
+					file_information_row,
+					file_hash)
+
+			}
+
+			file_information_table = append(file_information_table, file_information_row)
+
+			if file_index%batch_size == 0 {
+				fmt.Println("writing : ", file_index-batch_size, "-", file_index, " / ", total_file_count)
+				storage.Write_2d_slice_set_to_csv(file_information_table, output_file)
+				file_information_table = nil
+			}
+
+		}
+	}
+
+	fmt.Println("writing final : ", total_file_count-(total_file_count%batch_size), "-", total_file_count, " / ", total_file_count)
 	storage.Write_2d_slice_set_to_csv(file_information_table, output_file)
 
 }
@@ -95,15 +116,32 @@ func Calculate_file_hash(file_path_and_name string, hash_algorithm string) strin
 
 	wait_group.Add(1)
 
-	go hashHelper(file, file_hash, read_data_channel, read_status_channel, hash_data_channel, hash_status_channel, wait_group)
+	go hashHelper(
+		file,
+		file_hash,
+		read_data_channel,
+		read_status_channel,
+		hash_data_channel,
+		hash_status_channel,
+		wait_group)
 
 	wait_group.Add(1)
 
-	hashHelper(file, file_hash, read_status_channel, read_data_channel, hash_status_channel, hash_data_channel, wait_group)
+	hashHelper(
+		file,
+		file_hash,
+		read_status_channel,
+		read_data_channel,
+		hash_status_channel,
+		hash_data_channel,
+		wait_group)
+
 	wait_group.Wait()
 
 	file_hash_code := fmt.Sprintf("%x", file_hash.Sum(nil))
-
+	var file_hash_bytes []byte
+	file_hash_code = string(b64.StdEncoding.EncodeToString(file_hash.Sum(file_hash_bytes)))
+	fmt.Println("file path: ", file_path_and_name, " --> hash code:", file_hash_code)
 	return file_hash_code
 }
 

@@ -13,6 +13,7 @@ import (
 func main() {
 
 	var sha_algorithm string
+	var skip_files, batch int
 	var delete_source_flag string
 	var recursivity_flag string
 
@@ -46,9 +47,35 @@ func main() {
 						&sha_algorithm,
 						false,
 					},
+					&cli.IntFlag{
+						"skipFiles",
+						[]string{"skip"},
+						"skip a number of files",
+						[]string{""},
+						"",
+						false,
+						false,
+						0,
+						"",
+						&skip_files,
+						false,
+					},
+					&cli.IntFlag{
+						"batchSize",
+						[]string{"batch"},
+						"skip a number of files",
+						[]string{""},
+						"",
+						false,
+						false,
+						0,
+						"",
+						&batch,
+						false,
+					},
 				},
 				Action: func(c *cli.Context) error {
-					Start_file_hash_analysis(sha_algorithm)
+					Start_file_hash_analysis(sha_algorithm, skip_files, batch)
 					return nil
 
 				},
@@ -133,7 +160,7 @@ func Unzip_files_in_folder(recursivity_flag string) {
 	internal.Unzip_files_in_folder(directory_name, recursivity_flag)
 }
 
-func Start_file_hash_analysis(hashing_alogrithm string) {
+func Start_file_hash_analysis(hashing_alogrithm string, skip int, batch int) {
 
 	directory_name, directory_selection_error := dialog.Directory().
 		Title("Select log file storage location").Browse()
@@ -142,7 +169,7 @@ func Start_file_hash_analysis(hashing_alogrithm string) {
 		fmt.Println(directory_selection_error)
 	}
 
-	internal.Get_file_hashes_for_folder(directory_name, hashing_alogrithm)
+	internal.Get_file_hashes_for_folder(directory_name, hashing_alogrithm, skip, batch)
 
 }
 
